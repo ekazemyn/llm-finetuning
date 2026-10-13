@@ -158,11 +158,11 @@ python -m llm_finetuning --config configs/experiment.yaml benchmark --backend tr
 python -m llm_finetuning --config configs/experiment.yaml benchmark --backend vllm --method lora --model-path outputs/finqa-qwen25-15b/lora-r16-s42 --batch-sizes 1,4,8
 ```
 
-Outputs are written under `outputs/`; the MLflow file store defaults to
-`mlruns/`. Start the tracking UI with:
+Outputs are written under `outputs/`; MLflow uses a SQLite tracking database at
+`mlflow.db` by default. Start the tracking UI with:
 
 ```bash
-mlflow ui --backend-store-uri mlruns --host 127.0.0.1 --port 5000
+mlflow ui --backend-store-uri sqlite:///mlflow.db --host 127.0.0.1 --port 5000
 ```
 
 ## API and Docker

@@ -2,7 +2,7 @@ project:
   name: efficient-llm-finetuning
   seed: 42
   output_dir: outputs
-  mlflow_tracking_uri: mlruns
+  mlflow_tracking_uri: sqlite:///mlflow.db
   experiment_name: finqa-qwen25-15b
 
 model:

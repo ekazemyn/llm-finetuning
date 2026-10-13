@@ -10,6 +10,7 @@ def test_load_project_experiment_config():
     assert config.seed == 42
     assert config.training_method == "lora"
     assert config.lora_rank == 16
+    assert config.raw["project"]["mlflow_tracking_uri"] == "sqlite:///mlflow.db"
 
 
 def test_reject_unsupported_method_and_rank():
