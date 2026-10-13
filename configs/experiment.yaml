@@ -1,0 +1,54 @@
+project:
+  name: efficient-llm-finetuning
+  seed: 42
+  output_dir: outputs
+  mlflow_tracking_uri: mlruns
+  experiment_name: finqa-qwen25-15b
+
+model:
+  name_or_path: Qwen/Qwen2.5-1.5B-Instruct
+  revision: main
+  tokenizer_revision: main
+  max_length: 1024
+  trust_remote_code: false
+
+data:
+  dataset_name: ibm/FinQA
+  dataset_revision: main
+  train_split: train
+  validation_split: dev
+  test_split: test
+  max_train_samples: null
+  max_eval_samples: null
+
+training:
+  method: lora
+  output_dir: outputs/finqa-qwen25-15b
+  learning_rate: 0.0002
+  epochs: 3
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 8
+  gradient_checkpointing: true
+  warmup_ratio: 0.03
+  weight_decay: 0.0
+  logging_steps: 10
+  save_strategy: epoch
+  evaluation_strategy: epoch
+  max_steps: -1
+  bf16: false
+  fp16: true
+
+lora:
+  rank: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+inference:
+  backend: transformers
+  quantization: none
+  batch_sizes: [1, 4, 8]
+  warmup_requests: 5
+  measured_requests: 50
+  max_new_tokens: 128
