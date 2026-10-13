@@ -72,7 +72,7 @@ def load_model(
         load_kwargs["revision"] = revision
     if torch.cuda.is_available():
         load_kwargs["device_map"] = "auto"
-        load_kwargs["torch_dtype"] = torch.float16
+        load_kwargs["dtype"] = torch.float16
 
     if quantization != "none":
         if not torch.cuda.is_available():

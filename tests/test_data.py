@@ -1,7 +1,7 @@
 import pytest
 
 from llm_finetuning.data import _cache_metadata, normalize_example
-from llm_finetuning.training import _chat_text
+from llm_finetuning.training import _chat_text, _warmup_steps
 
 
 def test_normalize_finqa_nested_record():
@@ -91,3 +91,9 @@ def test_prepared_cache_metadata_changes_with_sample_limit():
     config["data"]["max_eval_samples"] = 100
 
     assert _cache_metadata(config)["sample_limits"] != initial["sample_limits"]
+
+
+def test_warmup_ratio_maps_to_transformers_ratio_form():
+    assert _warmup_steps({"warmup_ratio": 0.03}) == 0.03
+    with pytest.raises(ValueError, match=r"range \[0, 1\)"):
+        _warmup_steps({"warmup_ratio": 1.0})

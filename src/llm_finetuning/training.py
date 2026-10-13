@@ -12,6 +12,13 @@ from llm_finetuning.modeling import load_model, load_tokenizer
 from llm_finetuning.reproducibility import runtime_manifest, set_seed
 
 
+def _warmup_steps(training_config: dict[str, Any]) -> float:
+    warmup_ratio = float(training_config["warmup_ratio"])
+    if not 0.0 <= warmup_ratio < 1.0:
+        raise ValueError("warmup_ratio must be in the range [0, 1).")
+    return warmup_ratio
+
+
 def _chat_text(example: dict[str, str], tokenizer, max_length: int) -> dict[str, str]:
     prompt = tokenizer.apply_chat_template(
         [{"role": "user", "content": example["prompt"]}],
@@ -143,7 +150,7 @@ def train(
         per_device_eval_batch_size=int(training_config["per_device_eval_batch_size"]),
         gradient_accumulation_steps=int(training_config["gradient_accumulation_steps"]),
         gradient_checkpointing=bool(training_config["gradient_checkpointing"]),
-        warmup_ratio=float(training_config["warmup_ratio"]),
+        warmup_steps=_warmup_steps(training_config),
         weight_decay=float(training_config["weight_decay"]),
         logging_steps=int(training_config["logging_steps"]),
         save_strategy=training_config["save_strategy"],
