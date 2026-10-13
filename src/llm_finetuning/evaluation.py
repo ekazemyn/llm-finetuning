@@ -48,6 +48,10 @@ def _move_batch(batch: dict[str, Any], model):
     return {key: value.to(device) for key, value in batch.items()}
 
 
+def _batch_rows(dataset, start: int, batch_size: int) -> list[dict[str, Any]]:
+    return [dataset[index] for index in range(start, min(start + batch_size, len(dataset)))]
+
+
 def _mean_eval_loss(model, tokenizer, examples, batch_size: int, max_length: int) -> float | None:
     import torch
 
@@ -116,7 +120,7 @@ def evaluate(
         torch.cuda.reset_peak_memory_stats()
     started = time.perf_counter()
     for start in range(0, len(examples), batch_size):
-        batch = examples[start : start + batch_size]
+        batch = _batch_rows(examples, start, batch_size)
         encoded = tokenizer(
             [item["prompt"] for item in batch],
             return_tensors="pt",
