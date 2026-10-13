@@ -52,7 +52,9 @@ def load_config(path: str | Path) -> ExperimentConfig:
         ("data", "dataset_revision"),
     ):
         revision = str(raw[section].get(key, ""))
-        if len(revision) != 40 or any(character not in "0123456789abcdef" for character in revision):
+        if len(revision) != 40 or any(
+            character not in "0123456789abcdef" for character in revision
+        ):
             raise ValueError(f"{section}.{key} must be a pinned 40-character commit SHA")
     config = ExperimentConfig(raw=raw)
     _ = config.seed, config.model_name, config.training_method, config.lora_rank
