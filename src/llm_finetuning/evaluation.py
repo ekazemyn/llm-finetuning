@@ -13,6 +13,7 @@ from typing import Any
 from llm_finetuning.data import load_finqa
 from llm_finetuning.modeling import load_model, load_tokenizer
 from llm_finetuning.reproducibility import runtime_manifest, set_seed
+from llm_finetuning.tracking import log_result
 
 _NUMBER = re.compile(r"[-+]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?:[eE][-+]?\d+)?%?")
 
@@ -104,12 +105,15 @@ def evaluate(
     tokenizer = load_tokenizer(
         config["model"]["name_or_path"], config["model"].get("tokenizer_revision", "main")
     )
+    tokenizer.padding_side = "left"
     model = load_model(config, method=method, model_path=model_path, inference=True)
     batch_size = int(config["training"]["per_device_eval_batch_size"])
     max_length = int(config["model"]["max_length"])
     max_new_tokens = int(config["inference"]["max_new_tokens"])
     predictions: list[dict[str, str]] = []
     model.eval()
+    if torch.cuda.is_available():
+        torch.cuda.reset_peak_memory_stats()
     started = time.perf_counter()
     for start in range(0, len(examples), batch_size):
         batch = examples[start : start + batch_size]
@@ -133,13 +137,15 @@ def evaluate(
         decoded = tokenizer.batch_decode(generated[:, prompt_width:], skip_special_tokens=True)
         predictions.extend(
             {"id": item["id"], "prediction": text, "reference": item["answer"]}
-            for item, text in zip(batch, decoded)
+            for item, text in zip(batch, decoded, strict=True)
         )
     inference_seconds = time.perf_counter() - started
     accuracy = sum(answers_match(row["prediction"], row["reference"]) for row in predictions)
     accuracy = accuracy / len(predictions) if predictions else 0.0
     loss = _mean_eval_loss(model, tokenizer, list(examples), batch_size, max_length)
-    peak_memory_mb = torch.cuda.max_memory_allocated() / (1024**2) if torch.cuda.is_available() else None
+    peak_memory_mb = (
+        torch.cuda.max_memory_allocated() / (1024**2) if torch.cuda.is_available() else None
+    )
 
     result: dict[str, Any] = {
         "method": method,
@@ -157,6 +163,18 @@ def evaluate(
     checkpoint_label = Path(model_path).name if model_path else "base"
     result_path = output_dir / f"{method}-{checkpoint_label}-{split}.json"
     result_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    log_result(
+        config,
+        f"evaluation-{method}-{checkpoint_label}-{split}",
+        {"method": method, "split": split, "model_path": model_path},
+        {
+            "accuracy": accuracy,
+            "eval_loss": loss,
+            "inference_seconds": inference_seconds,
+            "peak_gpu_memory_allocated_mb": peak_memory_mb,
+        },
+        result_path,
+    )
     return result
 
 
@@ -170,10 +188,16 @@ def write_comparison(results: list[dict[str, Any]], output_path: str | Path) -> 
         "eval_loss",
         "train_loss",
         "train_runtime_seconds",
-        "peak_gpu_memory_allocated_mb",
+        "train_peak_gpu_memory_allocated_mb",
+        "eval_peak_gpu_memory_allocated_mb",
+        "backend",
+        "quantization",
+        "batch_size",
         "throughput_requests_per_second",
+        "throughput_tokens_per_second",
         "p50_latency_ms",
         "p95_latency_ms",
+        "latency_unit",
         "vram_peak_mb",
     ]
     path = Path(output_path)

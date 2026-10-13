@@ -12,19 +12,58 @@ from llm_finetuning.modeling import load_model, load_tokenizer
 from llm_finetuning.reproducibility import runtime_manifest, set_seed
 
 
-def _chat_text(example: dict[str, str], tokenizer) -> dict[str, str]:
-    messages = [
-        {"role": "user", "content": example["prompt"]},
-        {"role": "assistant", "content": example["completion"]},
-    ]
-    return {"text": tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False)}
+def _chat_text(example: dict[str, str], tokenizer, max_length: int) -> dict[str, str]:
+    prompt = tokenizer.apply_chat_template(
+        [{"role": "user", "content": example["prompt"]}],
+        tokenize=False,
+        add_generation_prompt=True,
+    )
+    completion = example["completion"].strip()
+    if tokenizer.eos_token and not completion.endswith(tokenizer.eos_token):
+        completion = f"{completion}{tokenizer.eos_token}"
+
+    completion_budget = min(256, max(1, max_length // 3))
+    completion_ids = tokenizer.encode(completion, add_special_tokens=False)
+    if len(completion_ids) > completion_budget:
+        marker = "Final answer:"
+        marker_index = completion.rfind(marker)
+        if marker_index >= 0:
+            answer_ids = tokenizer.encode(completion[marker_index:], add_special_tokens=False)
+            if len(answer_ids) >= completion_budget:
+                completion_ids = answer_ids[-completion_budget:]
+            else:
+                reasoning_ids = tokenizer.encode(
+                    completion[:marker_index], add_special_tokens=False
+                )
+                completion_ids = reasoning_ids[: completion_budget - len(answer_ids)] + answer_ids
+        else:
+            completion_ids = completion_ids[:completion_budget]
+        completion = tokenizer.decode(
+            completion_ids, skip_special_tokens=False, clean_up_tokenization_spaces=False
+        )
+
+    prompt_ids = tokenizer.encode(prompt, add_special_tokens=False)
+    prompt_budget = max_length - len(completion_ids) - 8
+    if prompt_budget < 1:
+        raise ValueError("max_length leaves no room for the FinQA question and answer.")
+    if len(prompt_ids) > prompt_budget:
+        prompt = tokenizer.decode(
+            prompt_ids[-prompt_budget:],
+            skip_special_tokens=False,
+            clean_up_tokenization_spaces=False,
+        )
+    return {"prompt": prompt, "completion": completion}
 
 
-def _mlflow_log(config: dict[str, Any], method: str, result: dict[str, Any], output_dir: Path) -> None:
+def _mlflow_log(
+    config: dict[str, Any], method: str, result: dict[str, Any], output_dir: Path
+) -> None:
     try:
         import mlflow
     except ImportError as exc:
-        raise RuntimeError("MLflow is required for tracked training runs; install the project dependencies.") from exc
+        raise RuntimeError(
+            "MLflow is required for tracked training runs; install the project dependencies."
+        ) from exc
 
     project = config["project"]
     mlflow.set_tracking_uri(project["mlflow_tracking_uri"])
@@ -50,7 +89,12 @@ def _mlflow_log(config: dict[str, Any], method: str, result: dict[str, Any], out
         mlflow.log_artifact(str(output_dir / "run.json"))
 
 
-def train(config: dict[str, Any], method: str | None = None, rank: int | None = None) -> dict[str, Any]:
+def train(
+    config: dict[str, Any],
+    method: str | None = None,
+    rank: int | None = None,
+    resume_from_checkpoint: str | None = None,
+) -> dict[str, Any]:
     """Fine-tune a configured method and persist a resumable model checkpoint."""
     method = (method or config["training"]["method"]).lower()
     if method not in {"lora", "qlora"}:
@@ -65,16 +109,28 @@ def train(config: dict[str, Any], method: str | None = None, rank: int | None = 
         import torch
         from trl import SFTConfig, SFTTrainer
     except ImportError as exc:
-        raise RuntimeError("PyTorch and TRL are required to train; install the project dependencies.") from exc
+        raise RuntimeError(
+            "PyTorch and TRL are required to train; install the project dependencies."
+        ) from exc
 
-    output_dir = Path(config["training"]["output_dir"]) / f"{method}-r{config['lora']['rank']}-s{config['project']['seed']}"
+    output_dir = (
+        Path(config["training"]["output_dir"])
+        / f"{method}-r{config['lora']['rank']}-s{config['project']['seed']}"
+    )
     output_dir.mkdir(parents=True, exist_ok=True)
     tokenizer = load_tokenizer(
         config["model"]["name_or_path"], config["model"].get("tokenizer_revision", "main")
     )
     splits = load_finqa(config)
-    train_data = splits["train"].map(lambda example: _chat_text(example, tokenizer))
-    eval_data = splits["validation"].map(lambda example: _chat_text(example, tokenizer))
+    max_length = int(config["model"]["max_length"])
+    train_data = splits["train"].map(
+        lambda example: _chat_text(example, tokenizer, max_length),
+        remove_columns=splits["train"].column_names,
+    )
+    eval_data = splits["validation"].map(
+        lambda example: _chat_text(example, tokenizer, max_length),
+        remove_columns=splits["validation"].column_names,
+    )
     model = load_model(config, method=method)
 
     training_config = config["training"]
@@ -102,7 +158,8 @@ def train(config: dict[str, Any], method: str | None = None, rank: int | None = 
         fp16=bool(training_config["fp16"] and torch.cuda.is_available()),
         bf16=bool(training_config["bf16"] and torch.cuda.is_available()),
         max_length=int(config["model"]["max_length"]),
-        dataset_text_field="text",
+        completion_only_loss=True,
+        eos_token=tokenizer.eos_token,
         packing=False,
     )
     trainer = SFTTrainer(
@@ -117,10 +174,16 @@ def train(config: dict[str, Any], method: str | None = None, rank: int | None = 
         torch.cuda.reset_peak_memory_stats()
         torch.cuda.synchronize()
     started = time.perf_counter()
-    train_output = trainer.train()
+    train_output = trainer.train(resume_from_checkpoint=resume_from_checkpoint)
     if torch.cuda.is_available():
         torch.cuda.synchronize()
     elapsed_seconds = time.perf_counter() - started
+    peak_memory_allocated_mb = (
+        torch.cuda.max_memory_allocated() / (1024**2) if torch.cuda.is_available() else None
+    )
+    peak_memory_reserved_mb = (
+        torch.cuda.max_memory_reserved() / (1024**2) if torch.cuda.is_available() else None
+    )
     evaluation = trainer.evaluate()
     trainer.save_model(str(output_dir))
     tokenizer.save_pretrained(str(output_dir))
@@ -132,12 +195,8 @@ def train(config: dict[str, Any], method: str | None = None, rank: int | None = 
         "train_runtime_seconds": elapsed_seconds,
         "train_loss": train_output.metrics.get("train_loss"),
         "eval_loss": evaluation.get("eval_loss"),
-        "peak_gpu_memory_allocated_mb": (
-            torch.cuda.max_memory_allocated() / (1024**2) if torch.cuda.is_available() else None
-        ),
-        "peak_gpu_memory_reserved_mb": (
-            torch.cuda.max_memory_reserved() / (1024**2) if torch.cuda.is_available() else None
-        ),
+        "peak_gpu_memory_allocated_mb": peak_memory_allocated_mb,
+        "peak_gpu_memory_reserved_mb": peak_memory_reserved_mb,
         "global_step": int(train_output.global_step),
         "runtime": runtime_manifest(),
     }

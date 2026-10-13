@@ -1,0 +1,32 @@
+services:
+  inference:
+    build:
+      context: .
+      args:
+        INSTALL_VLLM: ${INSTALL_VLLM:-false}
+    image: efficient-llm-finetuning:local
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      CONFIG_PATH: /app/configs/experiment.yaml
+      INFERENCE_BACKEND: ${INFERENCE_BACKEND:-transformers}
+      LLM_METHOD: ${LLM_METHOD:-baseline}
+      MODEL_PATH: ${MODEL_PATH:-}
+      QUANTIZATION: ${QUANTIZATION:-none}
+      API_KEY: ${API_KEY:?Set API_KEY in your environment before deployment}
+      HF_HOME: /root/.cache/huggingface
+    volumes:
+      - hf-cache:/root/.cache/huggingface
+      - ./configs:/app/configs:ro
+      - ./outputs:/app/outputs
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+
+volumes:
+  hf-cache:

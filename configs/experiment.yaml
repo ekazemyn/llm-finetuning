@@ -7,19 +7,20 @@ project:
 
 model:
   name_or_path: Qwen/Qwen2.5-1.5B-Instruct
-  revision: main
-  tokenizer_revision: main
+  revision: 989aa7980e4cf806f80c7fef2b1adb7bc71aa306
+  tokenizer_revision: 989aa7980e4cf806f80c7fef2b1adb7bc71aa306
   max_length: 1024
   trust_remote_code: false
 
 data:
-  dataset_name: ibm/FinQA
-  dataset_revision: main
+  dataset_name: czyssrs/FinQA
+  dataset_revision: 0f16e2867befa6840783e58be38c9efb9229d742
   train_split: train
   validation_split: dev
   test_split: test
   max_train_samples: null
   max_eval_samples: null
+  prepared_dir: data/finqa-prepared
 
 training:
   method: lora
