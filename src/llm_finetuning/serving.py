@@ -6,7 +6,7 @@ import threading
 from pathlib import Path
 from typing import Any
 
-from llm_finetuning.modeling import load_model, load_tokenizer
+from llm_finetuning.modeling import format_user_prompt, load_model, load_tokenizer
 
 
 class TransformersGenerator:
@@ -39,7 +39,7 @@ class TransformersGenerator:
     def generate(self, prompts: list[str], max_tokens: int, temperature: float) -> list[str]:
         with self._lock, self.torch.inference_mode():
             encoded = self.tokenizer(
-                prompts,
+                [format_user_prompt(self.tokenizer, prompt) for prompt in prompts],
                 return_tensors="pt",
                 padding=True,
                 truncation=True,
@@ -76,6 +76,9 @@ class VLLMGenerator:
             raise RuntimeError(
                 "vLLM is Linux/CUDA-only; install the optional vLLM dependencies."
             ) from exc
+        self.tokenizer = load_tokenizer(
+            config["model"]["name_or_path"], config["model"].get("tokenizer_revision", "main")
+        )
         adapter_path = (
             model_path
             if model_path and (Path(model_path) / "adapter_config.json").is_file()
@@ -107,7 +110,7 @@ class VLLMGenerator:
 
         with self._lock:
             outputs = self.engine.generate(
-                prompts,
+                [format_user_prompt(self.tokenizer, prompt) for prompt in prompts],
                 SamplingParams(temperature=temperature, max_tokens=max_tokens),
                 lora_request=self.lora_request,
             )

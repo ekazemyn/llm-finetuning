@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from llm_finetuning.data import load_finqa
-from llm_finetuning.modeling import load_model, load_tokenizer
+from llm_finetuning.modeling import format_user_prompt, load_model, load_tokenizer
 from llm_finetuning.reproducibility import runtime_manifest, set_seed
 from llm_finetuning.tracking import log_result
 
@@ -31,7 +31,7 @@ def _generate_transformers_batches(
     for start in range(0, len(prompts), batch_size):
         chunk = prompts[start : start + batch_size]
         encoded = tokenizer(
-            chunk,
+            [format_user_prompt(tokenizer, prompt) for prompt in chunk],
             return_tensors="pt",
             padding=True,
             truncation=True,
@@ -59,13 +59,14 @@ def _generate_transformers_batches(
     return latencies, output_tokens
 
 
-def _generate_vllm_batches(prompts, engine, sampling, lora_request, batch_size: int):
+def _generate_vllm_batches(prompts, tokenizer, engine, sampling, lora_request, batch_size: int):
     latencies = []
     output_tokens = 0
     for start in range(0, len(prompts), batch_size):
         chunk = prompts[start : start + batch_size]
         started = time.perf_counter()
-        outputs = engine.generate(chunk, sampling, lora_request=lora_request)
+        formatted = [format_user_prompt(tokenizer, prompt) for prompt in chunk]
+        outputs = engine.generate(formatted, sampling, lora_request=lora_request)
         latencies.append(time.perf_counter() - started)
         output_tokens += sum(len(output.outputs[0].token_ids) for output in outputs)
     return latencies, output_tokens
@@ -128,6 +129,9 @@ def _vllm_benchmark(
     ):
         raise ValueError(f"vLLM requires a trained {method.upper()} adapter checkpoint.")
 
+    tokenizer = load_tokenizer(
+        config["model"]["name_or_path"], config["model"].get("tokenizer_revision", "main")
+    )
     adapter_path = (
         model_path if model_path and (Path(model_path) / "adapter_config.json").is_file() else None
     )
@@ -164,9 +168,11 @@ def _vllm_benchmark(
         device_handle = None
         peak_vram = None
     warmup_count = max(0, min(warmup_count, len(prompts)))
-    _generate_vllm_batches(prompts[:warmup_count], engine, sampling, lora_request, batch_size)
+    _generate_vllm_batches(
+        prompts[:warmup_count], tokenizer, engine, sampling, lora_request, batch_size
+    )
     batch_latencies, output_tokens = _generate_vllm_batches(
-        prompts[warmup_count:], engine, sampling, lora_request, batch_size
+        prompts[warmup_count:], tokenizer, engine, sampling, lora_request, batch_size
     )
     if pynvml is not None and device_handle is not None:
         peak_vram = max(

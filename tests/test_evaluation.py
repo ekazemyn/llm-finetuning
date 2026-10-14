@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from llm_finetuning.evaluation import _batch_rows, answers_match, extract_numeric_answer
+from llm_finetuning.modeling import format_user_prompt
 
 
 def test_extract_final_numeric_answer():
@@ -32,3 +33,16 @@ def test_batch_rows_uses_integer_access_for_columnar_datasets():
             return rows[index]
 
     assert _batch_rows(ColumnarDataset(), 1, 2) == rows[1:]
+
+
+def test_inference_prompt_uses_user_chat_template_and_generation_prefix():
+    class TemplateTokenizer:
+        def apply_chat_template(self, messages, tokenize, add_generation_prompt):
+            assert messages == [{"role": "user", "content": "Calculate 2 + 2."}]
+            assert tokenize is False
+            assert add_generation_prompt is True
+            return "<|im_start|>user\nCalculate 2 + 2.<|im_end|>\n<|im_start|>assistant\n"
+
+    assert format_user_prompt(TemplateTokenizer(), "Calculate 2 + 2.").endswith(
+        "<|im_start|>assistant\n"
+    )

@@ -28,6 +28,15 @@ def load_tokenizer(model_name: str, revision: str = "main"):
     return tokenizer
 
 
+def format_user_prompt(tokenizer, prompt: str) -> str:
+    """Format raw user text with the model's chat template and assistant prefix."""
+    return tokenizer.apply_chat_template(
+        [{"role": "user", "content": prompt}],
+        tokenize=False,
+        add_generation_prompt=True,
+    )
+
+
 def load_model(
     config: dict[str, Any],
     method: str | None = None,

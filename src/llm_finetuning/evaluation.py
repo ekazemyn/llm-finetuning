@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from llm_finetuning.data import load_finqa
-from llm_finetuning.modeling import load_model, load_tokenizer
+from llm_finetuning.modeling import format_user_prompt, load_model, load_tokenizer
 from llm_finetuning.reproducibility import runtime_manifest, set_seed
 from llm_finetuning.tracking import log_result
 
@@ -122,7 +122,7 @@ def evaluate(
     for start in range(0, len(examples), batch_size):
         batch = _batch_rows(examples, start, batch_size)
         encoded = tokenizer(
-            [item["prompt"] for item in batch],
+            [format_user_prompt(tokenizer, item["prompt"]) for item in batch],
             return_tensors="pt",
             padding=True,
             truncation=True,
