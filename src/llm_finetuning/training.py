@@ -9,7 +9,7 @@ from typing import Any
 
 from llm_finetuning.data import load_finqa
 from llm_finetuning.modeling import load_model, load_tokenizer
-from llm_finetuning.reproducibility import runtime_manifest, set_seed
+from llm_finetuning.reproducibility import build_provenance, set_seed
 
 
 def _warmup_steps(training_config: dict[str, Any]) -> float:
@@ -92,7 +92,7 @@ def _mlflow_log(
         for name, value in result.items():
             if isinstance(value, (int, float)) and value is not None:
                 mlflow.log_metric(name, float(value))
-        mlflow.log_dict(runtime_manifest(), "runtime.json")
+        mlflow.log_dict(result["provenance"], "provenance.json")
         mlflow.log_artifact(str(output_dir / "run.json"))
 
 
@@ -197,6 +197,7 @@ def train(
     evaluation = trainer.evaluate()
     trainer.save_model(str(output_dir))
     tokenizer.save_pretrained(str(output_dir))
+    provenance = build_provenance(config)
 
     result: dict[str, Any] = {
         "method": method,
@@ -208,7 +209,8 @@ def train(
         "peak_gpu_memory_allocated_mb": peak_memory_allocated_mb,
         "peak_gpu_memory_reserved_mb": peak_memory_reserved_mb,
         "global_step": int(train_output.global_step),
-        "runtime": runtime_manifest(),
+        "runtime": provenance["runtime"],
+        "provenance": provenance,
     }
     (output_dir / "run.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
     _mlflow_log(config, method, result, output_dir)

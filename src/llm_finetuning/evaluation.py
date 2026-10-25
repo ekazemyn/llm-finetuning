@@ -12,7 +12,7 @@ from typing import Any
 
 from llm_finetuning.data import load_finqa
 from llm_finetuning.modeling import format_user_prompt, load_model, load_tokenizer
-from llm_finetuning.reproducibility import runtime_manifest, set_seed
+from llm_finetuning.reproducibility import build_provenance, set_seed
 from llm_finetuning.tracking import log_result
 
 _NUMBER = re.compile(r"[-+]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?:[eE][-+]?\d+)?%?")
@@ -150,6 +150,7 @@ def evaluate(
     peak_memory_mb = (
         torch.cuda.max_memory_allocated() / (1024**2) if torch.cuda.is_available() else None
     )
+    provenance = build_provenance(config)
 
     result: dict[str, Any] = {
         "method": method,
@@ -159,7 +160,8 @@ def evaluate(
         "eval_loss": loss,
         "inference_seconds": inference_seconds,
         "peak_gpu_memory_allocated_mb": peak_memory_mb,
-        "runtime": runtime_manifest(),
+        "runtime": provenance["runtime"],
+        "provenance": provenance,
         "predictions": predictions,
     }
     output_dir = Path(config["project"]["output_dir"]) / "evaluations"

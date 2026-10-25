@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from llm_finetuning.reproducibility import build_provenance
+
 PREPROCESSING_VERSION = 1
 
 
@@ -181,6 +183,7 @@ def prepare_finqa(config: dict[str, Any], output_dir: str | Path | None = None) 
         "split_fingerprints": {
             name: getattr(split, "_fingerprint", None) for name, split in splits.items()
         },
+        "provenance": build_provenance(config),
     }
     (destination / "data_manifest.json").write_text(
         json.dumps(manifest, indent=2), encoding="utf-8"

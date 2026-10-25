@@ -211,7 +211,7 @@ image; verify compatibility on the target host before deploying.
 ## Reproducibility Checklist
 
 - Pin immutable model, tokenizer, and dataset revisions in the experiment YAML.
-- Keep the YAML, prepared data manifest, run JSON, MLflow run, and checkpoint together.
+- Keep the YAML, prepared-data manifest, provenance snapshot/config hash, run JSON, MLflow run, and checkpoint together.
 - Use the same seed list and identical data/config for every rank and method.
 - Do not compare throughput across machines, precisions, prompt lengths, or generation settings as if controlled.
 - Run each benchmark with no competing GPU workload; record the full runtime manifest.

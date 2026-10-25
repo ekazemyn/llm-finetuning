@@ -11,7 +11,7 @@ from typing import Any
 
 from llm_finetuning.data import load_finqa
 from llm_finetuning.modeling import format_user_prompt, load_model, load_tokenizer
-from llm_finetuning.reproducibility import runtime_manifest, set_seed
+from llm_finetuning.reproducibility import build_provenance, set_seed
 from llm_finetuning.tracking import log_result
 
 
@@ -207,6 +207,7 @@ def benchmark(
     prompts = [examples[index]["prompt"] for index in range(warmup_count + measured_count)]
     sizes = batch_sizes or list(config["inference"]["batch_sizes"])
     results = []
+    provenance = build_provenance(config)
 
     for batch_size in sizes:
         runner = _transformers_benchmark if backend == "transformers" else _vllm_benchmark
@@ -233,7 +234,8 @@ def benchmark(
             "p95_latency_ms": _percentile(latencies, 0.95) * 1000 if latencies else None,
             "latency_unit": "generation_batch_call",
             "vram_peak_mb": peak_vram,
-            "runtime": runtime_manifest(),
+            "runtime": provenance["runtime"],
+            "provenance": provenance,
         }
         results.append(result)
 
