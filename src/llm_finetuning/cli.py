@@ -10,6 +10,7 @@ from llm_finetuning.config import load_config
 from llm_finetuning.data import prepare_finqa
 from llm_finetuning.evaluation import evaluate
 from llm_finetuning.experiments import ablate, compare
+from llm_finetuning.preflight import run_preflight
 from llm_finetuning.training import train
 
 
@@ -23,6 +24,12 @@ def build_parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True)
 
     commands.add_parser("prepare", help="Download, normalize, and persist FinQA splits")
+    preflight_parser = commands.add_parser(
+        "preflight", help="Check runtime and backend readiness without loading model weights"
+    )
+    preflight_parser.add_argument("--method", choices=("baseline", "lora", "qlora"))
+    preflight_parser.add_argument("--backend", choices=("transformers", "vllm"))
+    preflight_parser.add_argument("--quantization")
     train_parser = commands.add_parser("train", help="Train a LoRA or QLoRA adapter")
     train_parser.add_argument("--method", choices=("lora", "qlora"))
     train_parser.add_argument("--rank", type=int, choices=(8, 16, 32))
@@ -61,6 +68,13 @@ def main() -> None:
     config = load_config(args.config).raw
     if args.command == "prepare":
         result = {"prepared_data": str(prepare_finqa(config))}
+    elif args.command == "preflight":
+        result = run_preflight(
+            config,
+            method=args.method,
+            backend=args.backend,
+            quantization=args.quantization,
+        )
     elif args.command == "train":
         result = train(
             config,
@@ -93,3 +107,5 @@ def main() -> None:
     else:
         raise ValueError(f"Unknown command: {args.command}")
     print(json.dumps(result, indent=2, default=str))
+    if args.command == "preflight" and not result["ok"]:
+        raise SystemExit(2)

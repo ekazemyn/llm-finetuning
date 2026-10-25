@@ -14,6 +14,7 @@ dependencies = [
   "fastapi>=0.115,<1",
   "mlflow>=2.17,<4",
   "numpy>=1.26,<3",
+  "packaging>=24,<27",
   "peft>=0.14,<1",
   "pydantic>=2.9,<3",
   "PyYAML>=6.0,<7",

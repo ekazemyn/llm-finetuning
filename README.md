@@ -115,6 +115,16 @@ vLLM support from a successful package install alone.
 
 ## Experiments
 
+Run preflight checks before downloading model weights or launching an experiment.
+The command checks the selected method/backend dependencies, supported versions,
+platform, CUDA visibility, and reports GPU memory/revision details without loading
+the model:
+
+```bash
+python -m llm_finetuning --config configs/experiment.yaml preflight --method lora --backend transformers
+python -m llm_finetuning --config configs/experiment.yaml preflight --method qlora --backend transformers --quantization 4bit
+```
+
 Prepare normalized FinQA once. The prepared cache refuses a metadata mismatch
 instead of silently reusing data produced for another dataset revision or seed.
 
