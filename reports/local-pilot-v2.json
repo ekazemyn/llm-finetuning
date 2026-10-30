@@ -1,0 +1,691 @@
+{
+  "status": "completed",
+  "schema_version": 2,
+  "measured_date": "2026-10-30",
+  "protocol": "answer-only-v2; question-ranked evidence; fixed prompt budget; completion-only loss",
+  "scoring": "pilot-strict-answer-v2; numeric/percent tolerance 0.0001; yes/no/text exact",
+  "source_artifact": "outputs/local-pilot/20261030T145010422275Z/metrics.json",
+  "device": "cpu",
+  "model": {
+    "name_or_path": "HuggingFaceTB/SmolLM2-135M-Instruct",
+    "revision": "12fd25f77366fa6b3b4b768ec3050bf629380bac",
+    "tokenizer_revision": "12fd25f77366fa6b3b4b768ec3050bf629380bac",
+    "max_length": 384,
+    "trust_remote_code": false
+  },
+  "data_revision": "0f16e2867befa6840783e58be38c9efb9229d742",
+  "source_manifest": {
+    "source_repository": "czyssrs/FinQA",
+    "dataset_revision": "0f16e2867befa6840783e58be38c9efb9229d742",
+    "source_splits": {
+      "train": "train",
+      "validation": "dev",
+      "test": "test"
+    },
+    "sha256": {
+      "train": "49f237eb9779b569473b26b08048867d04635a7cc39ad6a7a5664c55bb428db6",
+      "dev": "a847fb7e0d61a3125a1e2909852df6b89f1ee64d2c5ff1bf689e332214deee51",
+      "test": "831dbfb2e785dbc227f895ce3f24046433467aec67b09db2bd6ac7692a8a30dc"
+    }
+  },
+  "seed": 42,
+  "parameters": {
+    "trainable": 460800,
+    "total": 134975808,
+    "trainable_percent": 0.3413945112297457
+  },
+  "lora": {
+    "rank": 8,
+    "alpha": 16,
+    "dropout": 0.05,
+    "target_modules": [
+      "q_proj",
+      "v_proj"
+    ]
+  },
+  "generation_max_new_tokens": 64,
+  "total_seconds": 581.2916231000563,
+  "training": {
+    "steps": 24,
+    "requested_steps": 24,
+    "seconds": 294.4284178999951
+  },
+  "training_pool_examples": 32,
+  "training_examples_consumed": 24,
+  "heldout_ids": [
+    "PNC/2009/page_46.pdf-2",
+    "IP/2012/page_93.pdf-2",
+    "MRO/2007/page_134.pdf-2",
+    "RSG/2015/page_142.pdf-2",
+    "L/2015/page_59.pdf-1",
+    "BLK/2013/page_125.pdf-2",
+    "HIG/2008/page_318.pdf-3",
+    "BLK/2012/page_160.pdf-3"
+  ],
+  "runtime": {
+    "python_version": "3.12.8",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "machine": "AMD64",
+    "torch_version": "2.14.1+cpu",
+    "cuda_available": false,
+    "cuda_version": null
+  },
+  "provenance": {
+    "git": {
+      "commit": "2dab7b2aa91b4002486262955cd0796a107a5f26",
+      "branch": "main",
+      "dirty": true
+    },
+    "config_sha256": "7bdf69bab3bfe4300984ffeebafef1206791c7d74d89f1b6a7c549aa0d705dc1"
+  },
+  "packages": {
+    "torch": "2.14.1",
+    "transformers": "5.19.0",
+    "peft": "0.21.2",
+    "datasets": "4.8.5"
+  },
+  "baseline": {
+    "completion_loss": 3.1008293737064707,
+    "completion_perplexity": 22.2163693152327,
+    "answer_accuracy": 0.0,
+    "numeric_accuracy": 0.0,
+    "numeric_examples": 8,
+    "answer_type_metrics": {
+      "numeric": {
+        "examples": 4,
+        "correct": 0,
+        "accuracy": 0.0,
+        "parse_failures": 4
+      },
+      "percent": {
+        "examples": 4,
+        "correct": 0,
+        "accuracy": 0.0,
+        "parse_failures": 4
+      },
+      "yes_no": {
+        "examples": 0,
+        "correct": 0,
+        "accuracy": null,
+        "parse_failures": 0
+      },
+      "text": {
+        "examples": 0,
+        "correct": 0,
+        "accuracy": null,
+        "parse_failures": 0
+      }
+    },
+    "error_analysis": {
+      "examples": 8,
+      "correct": 0,
+      "incorrect": 8,
+      "parse_failures": 8,
+      "parse_failure_rate": 1.0,
+      "empty_outputs": 0,
+      "generations_at_token_limit": 2,
+      "eos_stopped": 6,
+      "evidence_truncated": 8,
+      "no_source_evidence": 0,
+      "wrong_with_truncated_evidence": 8
+    },
+    "examples": 8,
+    "answer_tokens": 66,
+    "evaluation_seconds": 135.36620960000437,
+    "predictions": [
+      {
+        "id": "PNC/2009/page_46.pdf-2",
+        "reference": "-1",
+        "prediction": "Based on the evidence provided, the share of total securities rated BBB/BAA or below changed by 10 percentage points between 2008 and 2009.",
+        "reference_type": "numeric",
+        "predicted_type": "text",
+        "parsed_prediction": "based on the evidence provided, the share of total securities rated bbb/baa or below changed by 10 percentage points between 2008 and 2009",
+        "parse_failure": true,
+        "correct": false,
+        "outcome": "parse_failure",
+        "context": {
+          "prompt_tokens": 319,
+          "prompt_budget": 320,
+          "evidence_original_tokens": 1249,
+          "evidence_retained_tokens": 226,
+          "evidence_omitted_tokens": 1023,
+          "evidence_truncated": true,
+          "selected_line_indices": [
+            1,
+            5,
+            6,
+            7,
+            10,
+            37,
+            39
+          ],
+          "no_source_evidence": false
+        },
+        "stop_reason": "eos",
+        "generated_tokens": 40,
+        "hit_token_limit": false
+      },
+      {
+        "id": "IP/2012/page_93.pdf-2",
+        "reference": "-5",
+        "prediction": "Based on the information provided, the change in rent expenses between 2010 and 2011 is $ 231 million.",
+        "reference_type": "numeric",
+        "predicted_type": "text",
+        "parsed_prediction": "based on the information provided, the change in rent expenses between 2010 and 2011 is $ 231 million",
+        "parse_failure": true,
+        "correct": false,
+        "outcome": "parse_failure",
+        "context": {
+          "prompt_tokens": 318,
+          "prompt_budget": 320,
+          "evidence_original_tokens": 1306,
+          "evidence_retained_tokens": 236,
+          "evidence_omitted_tokens": 1070,
+          "evidence_truncated": true,
+          "selected_line_indices": [
+            0,
+            1,
+            2,
+            6,
+            16,
+            18,
+            26,
+            36
+          ],
+          "no_source_evidence": false
+        },
+        "stop_reason": "eos",
+        "generated_tokens": 32,
+        "hit_token_limit": false
+      },
+      {
+        "id": "MRO/2007/page_134.pdf-2",
+        "reference": "66",
+        "prediction": "The total tax benefits realized for deductions during 2007 and 2006 in excess of the stock-based compensation expense for options exercised and other stock-based awards vested in millions were $30 million and $36 million, respectively.",
+        "reference_type": "numeric",
+        "predicted_type": "text",
+        "parsed_prediction": "the total tax benefits realized for deductions during 2007 and 2006 in excess of the stock-based compensation expense for options exercised and other stock-based awards vested in millions were $30 million and $36 million, respectively",
+        "parse_failure": true,
+        "correct": false,
+        "outcome": "parse_failure",
+        "context": {
+          "prompt_tokens": 319,
+          "prompt_budget": 320,
+          "evidence_original_tokens": 1324,
+          "evidence_retained_tokens": 215,
+          "evidence_omitted_tokens": 1109,
+          "evidence_truncated": true,
+          "selected_line_indices": [
+            0,
+            10,
+            24,
+            27,
+            29
+          ],
+          "no_source_evidence": false
+        },
+        "stop_reason": "eos",
+        "generated_tokens": 54,
+        "hit_token_limit": false
+      },
+      {
+        "id": "RSG/2015/page_142.pdf-2",
+        "reference": "9.9%",
+        "prediction": "Based on the provided evidence, the percentage growth of the aggregate fair values of our outstanding fuel hedge for 2014 to 2015 is:\n\n(37.8 million - 34.4 million) / 37.8 million = 0.67 or ",
+        "reference_type": "percent",
+        "predicted_type": "text",
+        "parsed_prediction": "based on the provided evidence, the percentage growth of the aggregate fair values of our outstanding fuel hedge for 2014 to 2015 is:\n\n(37.8 million - 34.4 million) / 37.8 million = 0.67 or",
+        "parse_failure": true,
+        "correct": false,
+        "outcome": "parse_failure",
+        "context": {
+          "prompt_tokens": 320,
+          "prompt_budget": 320,
+          "evidence_original_tokens": 842,
+          "evidence_retained_tokens": 231,
+          "evidence_omitted_tokens": 611,
+          "evidence_truncated": true,
+          "selected_line_indices": [
+            12,
+            13,
+            18,
+            20
+          ],
+          "no_source_evidence": false
+        },
+        "stop_reason": "token_limit",
+        "generated_tokens": 64,
+        "hit_token_limit": true
+      },
+      {
+        "id": "L/2015/page_59.pdf-1",
+        "reference": "-2.6%",
+        "prediction": "Based on the provided evidence, the roi of an investment in loews common stock from 2010 to 2011 is $101.72.",
+        "reference_type": "percent",
+        "predicted_type": "text",
+        "parsed_prediction": "based on the provided evidence, the roi of an investment in loews common stock from 2010 to 2011 is $101.72",
+        "parse_failure": true,
+        "correct": false,
+        "outcome": "parse_failure",
+        "context": {
+          "prompt_tokens": 316,
+          "prompt_budget": 320,
+          "evidence_original_tokens": 573,
+          "evidence_retained_tokens": 227,
+          "evidence_omitted_tokens": 346,
+          "evidence_truncated": true,
+          "selected_line_indices": [
+            0,
+            2,
+            3,
+            4,
+            10,
+            11,
+            12
+          ],
+          "no_source_evidence": false
+        },
+        "stop_reason": "eos",
+        "generated_tokens": 40,
+        "hit_token_limit": false
+      },
+      {
+        "id": "BLK/2013/page_125.pdf-2",
+        "reference": "9.88%",
+        "prediction": "Based on the provided evidence, the future minimum commitments under the operating leases in 2015 are as follows:\n\n- 2015 | 127\ntotal | $ 1286\nrent expense and certain office equipment expense under agreements amounted to $ 137 million",
+        "reference_type": "percent",
+        "predicted_type": "text",
+        "parsed_prediction": "based on the provided evidence, the future minimum commitments under the operating leases in 2015 are as follows:\n\n- 2015 | 127\ntotal | $ 1286\nrent expense and certain office equipment expense under agreements amounted to $ 137 million",
+        "parse_failure": true,
+        "correct": false,
+        "outcome": "parse_failure",
+        "context": {
+          "prompt_tokens": 319,
+          "prompt_budget": 320,
+          "evidence_original_tokens": 1266,
+          "evidence_retained_tokens": 231,
+          "evidence_omitted_tokens": 1035,
+          "evidence_truncated": true,
+          "selected_line_indices": [
+            4,
+            5,
+            6,
+            9,
+            14,
+            15,
+            16,
+            17,
+            19,
+            21
+          ],
+          "no_source_evidence": false
+        },
+        "stop_reason": "token_limit",
+        "generated_tokens": 64,
+        "hit_token_limit": true
+      },
+      {
+        "id": "HIG/2008/page_318.pdf-3",
+        "reference": "-2138",
+        "prediction": "The net change in total statutory capital from 2007 to 2008 is $987.",
+        "reference_type": "numeric",
+        "predicted_type": "text",
+        "parsed_prediction": "the net change in total statutory capital from 2007 to 2008 is $987",
+        "parse_failure": true,
+        "correct": false,
+        "outcome": "parse_failure",
+        "context": {
+          "prompt_tokens": 318,
+          "prompt_budget": 320,
+          "evidence_original_tokens": 1331,
+          "evidence_retained_tokens": 234,
+          "evidence_omitted_tokens": 1097,
+          "evidence_truncated": true,
+          "selected_line_indices": [
+            1,
+            2,
+            9,
+            13,
+            14
+          ],
+          "no_source_evidence": false
+        },
+        "stop_reason": "eos",
+        "generated_tokens": 26,
+        "hit_token_limit": false
+      },
+      {
+        "id": "BLK/2012/page_160.pdf-3",
+        "reference": "64.8%",
+        "prediction": "The company accrued interest and penalties of $ 10 million during 2011 and in total, as of december 31 , 2011, would affect the effective tax rate if recognized as of december 31 , 2011.",
+        "reference_type": "percent",
+        "predicted_type": "text",
+        "parsed_prediction": "the company accrued interest and penalties of $ 10 million during 2011 and in total, as of december 31 , 2011, would affect the effective tax rate if recognized as of december 31 , 2011",
+        "parse_failure": true,
+        "correct": false,
+        "outcome": "parse_failure",
+        "context": {
+          "prompt_tokens": 320,
+          "prompt_budget": 320,
+          "evidence_original_tokens": 1487,
+          "evidence_retained_tokens": 231,
+          "evidence_omitted_tokens": 1256,
+          "evidence_truncated": true,
+          "selected_line_indices": [
+            0,
+            2,
+            12,
+            22,
+            25
+          ],
+          "no_source_evidence": false
+        },
+        "stop_reason": "eos",
+        "generated_tokens": 60,
+        "hit_token_limit": false
+      }
+    ]
+  },
+  "adapted": {
+    "completion_loss": 1.7133596530466368,
+    "completion_perplexity": 5.5475681083072725,
+    "answer_accuracy": 0.0,
+    "numeric_accuracy": 0.0,
+    "numeric_examples": 8,
+    "answer_type_metrics": {
+      "numeric": {
+        "examples": 4,
+        "correct": 0,
+        "accuracy": 0.0,
+        "parse_failures": 4
+      },
+      "percent": {
+        "examples": 4,
+        "correct": 0,
+        "accuracy": 0.0,
+        "parse_failures": 3
+      },
+      "yes_no": {
+        "examples": 0,
+        "correct": 0,
+        "accuracy": null,
+        "parse_failures": 0
+      },
+      "text": {
+        "examples": 0,
+        "correct": 0,
+        "accuracy": null,
+        "parse_failures": 0
+      }
+    },
+    "error_analysis": {
+      "examples": 8,
+      "correct": 0,
+      "incorrect": 8,
+      "parse_failures": 7,
+      "parse_failure_rate": 0.875,
+      "empty_outputs": 0,
+      "generations_at_token_limit": 0,
+      "eos_stopped": 8,
+      "evidence_truncated": 8,
+      "no_source_evidence": 0,
+      "wrong_with_truncated_evidence": 8
+    },
+    "examples": 8,
+    "answer_tokens": 66,
+    "evaluation_seconds": 97.36482200003229,
+    "predictions": [
+      {
+        "id": "PNC/2009/page_46.pdf-2",
+        "reference": "-1",
+        "prediction": "Final answer: 1 percentage point",
+        "reference_type": "numeric",
+        "predicted_type": "text",
+        "parsed_prediction": "1 percentage point",
+        "parse_failure": true,
+        "correct": false,
+        "outcome": "parse_failure",
+        "context": {
+          "prompt_tokens": 319,
+          "prompt_budget": 320,
+          "evidence_original_tokens": 1249,
+          "evidence_retained_tokens": 226,
+          "evidence_omitted_tokens": 1023,
+          "evidence_truncated": true,
+          "selected_line_indices": [
+            1,
+            5,
+            6,
+            7,
+            10,
+            37,
+            39
+          ],
+          "no_source_evidence": false
+        },
+        "stop_reason": "eos",
+        "generated_tokens": 8,
+        "hit_token_limit": false
+      },
+      {
+        "id": "IP/2012/page_93.pdf-2",
+        "reference": "-5",
+        "prediction": "Final answer: $ 46 million",
+        "reference_type": "numeric",
+        "predicted_type": "text",
+        "parsed_prediction": "$ 46 million",
+        "parse_failure": true,
+        "correct": false,
+        "outcome": "parse_failure",
+        "context": {
+          "prompt_tokens": 318,
+          "prompt_budget": 320,
+          "evidence_original_tokens": 1306,
+          "evidence_retained_tokens": 236,
+          "evidence_omitted_tokens": 1070,
+          "evidence_truncated": true,
+          "selected_line_indices": [
+            0,
+            1,
+            2,
+            6,
+            16,
+            18,
+            26,
+            36
+          ],
+          "no_source_evidence": false
+        },
+        "stop_reason": "eos",
+        "generated_tokens": 9,
+        "hit_token_limit": false
+      },
+      {
+        "id": "MRO/2007/page_134.pdf-2",
+        "reference": "66",
+        "prediction": "Final answer: no",
+        "reference_type": "numeric",
+        "predicted_type": "yes_no",
+        "parsed_prediction": "no",
+        "parse_failure": true,
+        "correct": false,
+        "outcome": "parse_failure",
+        "context": {
+          "prompt_tokens": 319,
+          "prompt_budget": 320,
+          "evidence_original_tokens": 1324,
+          "evidence_retained_tokens": 215,
+          "evidence_omitted_tokens": 1109,
+          "evidence_truncated": true,
+          "selected_line_indices": [
+            0,
+            10,
+            24,
+            27,
+            29
+          ],
+          "no_source_evidence": false
+        },
+        "stop_reason": "eos",
+        "generated_tokens": 5,
+        "hit_token_limit": false
+      },
+      {
+        "id": "RSG/2015/page_142.pdf-2",
+        "reference": "9.9%",
+        "prediction": "Final answer: 10.4%",
+        "reference_type": "percent",
+        "predicted_type": "percent",
+        "parsed_prediction": "10.4",
+        "parse_failure": false,
+        "correct": false,
+        "outcome": "incorrect_answer",
+        "context": {
+          "prompt_tokens": 320,
+          "prompt_budget": 320,
+          "evidence_original_tokens": 842,
+          "evidence_retained_tokens": 231,
+          "evidence_omitted_tokens": 611,
+          "evidence_truncated": true,
+          "selected_line_indices": [
+            12,
+            13,
+            18,
+            20
+          ],
+          "no_source_evidence": false
+        },
+        "stop_reason": "eos",
+        "generated_tokens": 10,
+        "hit_token_limit": false
+      },
+      {
+        "id": "L/2015/page_59.pdf-1",
+        "reference": "-2.6%",
+        "prediction": "Final answer: $101.72",
+        "reference_type": "percent",
+        "predicted_type": "text",
+        "parsed_prediction": "$101.72",
+        "parse_failure": true,
+        "correct": false,
+        "outcome": "parse_failure",
+        "context": {
+          "prompt_tokens": 316,
+          "prompt_budget": 320,
+          "evidence_original_tokens": 573,
+          "evidence_retained_tokens": 227,
+          "evidence_omitted_tokens": 346,
+          "evidence_truncated": true,
+          "selected_line_indices": [
+            0,
+            2,
+            3,
+            4,
+            10,
+            11,
+            12
+          ],
+          "no_source_evidence": false
+        },
+        "stop_reason": "eos",
+        "generated_tokens": 11,
+        "hit_token_limit": false
+      },
+      {
+        "id": "BLK/2013/page_125.pdf-2",
+        "reference": "9.88%",
+        "prediction": "Final answer: 2015 / 127 = 20.15",
+        "reference_type": "percent",
+        "predicted_type": "text",
+        "parsed_prediction": "2015 / 127 = 20.15",
+        "parse_failure": true,
+        "correct": false,
+        "outcome": "parse_failure",
+        "context": {
+          "prompt_tokens": 319,
+          "prompt_budget": 320,
+          "evidence_original_tokens": 1266,
+          "evidence_retained_tokens": 231,
+          "evidence_omitted_tokens": 1035,
+          "evidence_truncated": true,
+          "selected_line_indices": [
+            4,
+            5,
+            6,
+            9,
+            14,
+            15,
+            16,
+            17,
+            19,
+            21
+          ],
+          "no_source_evidence": false
+        },
+        "stop_reason": "eos",
+        "generated_tokens": 21,
+        "hit_token_limit": false
+      },
+      {
+        "id": "HIG/2008/page_318.pdf-3",
+        "reference": "-2138",
+        "prediction": "Final answer: $987",
+        "reference_type": "numeric",
+        "predicted_type": "text",
+        "parsed_prediction": "$987",
+        "parse_failure": true,
+        "correct": false,
+        "outcome": "parse_failure",
+        "context": {
+          "prompt_tokens": 318,
+          "prompt_budget": 320,
+          "evidence_original_tokens": 1331,
+          "evidence_retained_tokens": 234,
+          "evidence_omitted_tokens": 1097,
+          "evidence_truncated": true,
+          "selected_line_indices": [
+            1,
+            2,
+            9,
+            13,
+            14
+          ],
+          "no_source_evidence": false
+        },
+        "stop_reason": "eos",
+        "generated_tokens": 8,
+        "hit_token_limit": false
+      },
+      {
+        "id": "BLK/2012/page_160.pdf-3",
+        "reference": "64.8%",
+        "prediction": "Final answer: 19.",
+        "reference_type": "percent",
+        "predicted_type": "numeric",
+        "parsed_prediction": "19",
+        "parse_failure": true,
+        "correct": false,
+        "outcome": "parse_failure",
+        "context": {
+          "prompt_tokens": 320,
+          "prompt_budget": 320,
+          "evidence_original_tokens": 1487,
+          "evidence_retained_tokens": 231,
+          "evidence_omitted_tokens": 1256,
+          "evidence_truncated": true,
+          "selected_line_indices": [
+            0,
+            2,
+            12,
+            22,
+            25
+          ],
+          "no_source_evidence": false
+        },
+        "stop_reason": "eos",
+        "generated_tokens": 8,
+        "hit_token_limit": false
+      }
+    ]
+  }
+}

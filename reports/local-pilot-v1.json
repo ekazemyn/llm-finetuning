@@ -1,0 +1,105 @@
+{
+  "status": "completed",
+  "measured_date": "2026-10-30",
+  "protocol": "answer-only-v1; tail-truncated prompt; completion-only loss",
+  "source_artifact": "outputs/local-pilot/20261030T142305282861Z/metrics.json",
+  "device": "cpu",
+  "model": {
+    "name_or_path": "HuggingFaceTB/SmolLM2-135M-Instruct",
+    "revision": "12fd25f77366fa6b3b4b768ec3050bf629380bac",
+    "tokenizer_revision": "12fd25f77366fa6b3b4b768ec3050bf629380bac",
+    "max_length": 192,
+    "trust_remote_code": false
+  },
+  "data_revision": "0f16e2867befa6840783e58be38c9efb9229d742",
+  "source_manifest": {
+    "source_repository": "czyssrs/FinQA",
+    "dataset_revision": "0f16e2867befa6840783e58be38c9efb9229d742",
+    "source_splits": {
+      "train": "train",
+      "validation": "dev",
+      "test": "test"
+    },
+    "sha256": {
+      "train": "49f237eb9779b569473b26b08048867d04635a7cc39ad6a7a5664c55bb428db6",
+      "dev": "a847fb7e0d61a3125a1e2909852df6b89f1ee64d2c5ff1bf689e332214deee51",
+      "test": "831dbfb2e785dbc227f895ce3f24046433467aec67b09db2bd6ac7692a8a30dc"
+    }
+  },
+  "seed": 42,
+  "parameters": {
+    "trainable": 460800,
+    "total": 134975808,
+    "trainable_percent": 0.3413945112297457
+  },
+  "total_seconds": 406.30035110004246,
+  "training": {
+    "steps": 24,
+    "requested_steps": 24,
+    "seconds": 124.18083700002171
+  },
+  "training_pool_examples": 32,
+  "training_examples_consumed": 24,
+  "heldout_ids": [
+    "PNC/2009/page_46.pdf-2",
+    "IP/2012/page_93.pdf-2",
+    "MRO/2007/page_134.pdf-2",
+    "RSG/2015/page_142.pdf-2",
+    "L/2015/page_59.pdf-1",
+    "BLK/2013/page_125.pdf-2",
+    "HIG/2008/page_318.pdf-3",
+    "BLK/2012/page_160.pdf-3"
+  ],
+  "runtime": {
+    "python_version": "3.12.8",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "machine": "AMD64",
+    "torch_version": "2.14.1+cpu",
+    "cuda_available": false,
+    "cuda_version": null
+  },
+  "baseline": {
+    "completion_loss": 3.8484495589227388,
+    "completion_perplexity": 46.92025970936858,
+    "numeric_accuracy": 0.0,
+    "examples": 8,
+    "answer_tokens": 66,
+    "evaluation_seconds": 63.495872500003316,
+    "generations_at_token_limit": 8,
+    "correct_answers": 0
+  },
+  "adapted": {
+    "completion_loss": 2.4665253975174646,
+    "completion_perplexity": 11.78143983126939,
+    "numeric_accuracy": 0.0,
+    "examples": 8,
+    "answer_tokens": 66,
+    "evaluation_seconds": 75.82018099993002,
+    "generations_at_token_limit": 8,
+    "correct_answers": 0
+  },
+  "lora": {
+    "rank": 8,
+    "alpha": 16,
+    "dropout": 0.05,
+    "target_modules": [
+      "q_proj",
+      "v_proj"
+    ]
+  },
+  "generation_max_new_tokens": 24,
+  "provenance": {
+    "git": {
+      "commit": "01ba285790cec97ead4e92fdff51a3d2488ae917",
+      "branch": "main",
+      "dirty": true
+    },
+    "config_sha256": "1da86d97cb11019fca9f951c0e95cf0f3945f97d6c2faffbe5b8324518484df7"
+  },
+  "packages": {
+    "torch": "2.14.1",
+    "transformers": "5.19.0",
+    "peft": "0.21.2",
+    "datasets": "4.8.5"
+  }
+}
