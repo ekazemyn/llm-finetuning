@@ -225,3 +225,43 @@ project reads the original authors' public JSON files at the pinned commit
 and records the source revision in each prepared-data manifest. Cite Chen et
 al., “FinQA: A Dataset of Numerical Reasoning over Financial Data,” EMNLP 2021,
 when publishing results based on the dataset.
+
+## Local pilot notebook
+
+Open [`notebooks/local_pilot.ipynb`](notebooks/local_pilot.ipynb) and select the
+repository `.venv` Python kernel. It runs a separate, pinned SmolLM2-135M-Instruct
+LoRA experiment with 32 train examples, 8 seeded held-out FinQA dev examples,
+192-token sequences, and at most 24 steps. CPU execution is supported; no
+bitsandbytes, TRL, MLflow, or vLLM is needed for this pilot. The notebook includes
+an optional dependency installation cell. Install `ipykernel` in that environment
+if your editor cannot discover the kernel.
+
+From an environment with the project installed, the same pilot can run as:
+
+```bash
+python -m llm_finetuning.pilot --config configs/local-pilot.yaml --budget-minutes 25
+```
+
+Target runtime is under 30 minutes after setup. The 25-minute cooperative budget
+is checked between operations, with a 10-minute training cap and time reserved for
+final evaluation. Installation, initial downloads (about 270 MB of model weights),
+and an individual operation can exceed the budget. The runner selects CUDA when
+available and otherwise uses CPU; a CPU-only PyTorch installation cannot use an
+NVIDIA GPU even if `nvidia-smi` detects it.
+
+Each run creates `outputs/local-pilot/<timestamp>/` containing `metrics.json`,
+`comparison.csv`, and a saved adapter/tokenizer. Metrics compare the base model
+with the same model after LoRA training on identical held-out prompts: token-weighted
+completion loss, completion perplexity, custom numeric answer accuracy, evaluation
+wall time, training steps, trainable parameter counts, and CUDA allocated memory
+when available. Source SHA-256 hashes, split IDs, effective config, and environment
+provenance accompany the results. Failed runs retain completed-stage metrics and
+an explicit incomplete status.
+
+Present these as **small-model feasibility pilot results**, with the sample count,
+seed, actual runtime and completed steps. The pilot trains answer-only completions
+and truncates long prompts to keep their ending; important evidence may be lost.
+The custom accuracy metric is not official FinQA scoring, and loss improvement is
+not proof of reasoning quality. Eight dev examples are too few for a general
+performance claim; zero accuracy or a regression is a valid measured outcome.
+The original Qwen experiment config and training pipeline remain separate.

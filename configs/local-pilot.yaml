@@ -1,0 +1,55 @@
+# Small-model feasibility pilot, separate from the main benchmark.
+project:
+  name: efficient-llm-finetuning
+  seed: 42
+  output_dir: outputs
+  mlflow_tracking_uri: sqlite:///mlflow.db
+  experiment_name: local-smollm2-pilot
+model:
+  name_or_path: HuggingFaceTB/SmolLM2-135M-Instruct
+  revision: 12fd25f77366fa6b3b4b768ec3050bf629380bac
+  tokenizer_revision: 12fd25f77366fa6b3b4b768ec3050bf629380bac
+  max_length: 192
+  trust_remote_code: false
+data:
+  dataset_name: czyssrs/FinQA
+  dataset_revision: 0f16e2867befa6840783e58be38c9efb9229d742
+  train_split: train
+  validation_split: dev
+  test_split: test
+  max_train_samples: 32
+  max_eval_samples: null
+  prepared_dir: data/local-pilot-prepared
+  max_test_samples: 1
+training:
+  method: lora
+  output_dir: outputs/local-pilot
+  learning_rate: 0.0002
+  epochs: 1
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 1
+  gradient_checkpointing: false
+  warmup_ratio: 0.03
+  weight_decay: 0.0
+  logging_steps: 10
+  save_strategy: epoch
+  evaluation_strategy: epoch
+  max_steps: 24
+  bf16: false
+  fp16: false
+lora:
+  rank: 8
+  alpha: 16
+  dropout: 0.05
+  target_modules:
+  - q_proj
+  - v_proj
+inference:
+  backend: transformers
+  quantization: none
+  batch_sizes:
+  - 1
+  warmup_requests: 0
+  measured_requests: 8
+  max_new_tokens: 24
