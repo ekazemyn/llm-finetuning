@@ -9,7 +9,7 @@ model:
   name_or_path: HuggingFaceTB/SmolLM2-135M-Instruct
   revision: 12fd25f77366fa6b3b4b768ec3050bf629380bac
   tokenizer_revision: 12fd25f77366fa6b3b4b768ec3050bf629380bac
-  max_length: 192
+  max_length: 384
   trust_remote_code: false
 data:
   dataset_name: czyssrs/FinQA
@@ -52,4 +52,4 @@ inference:
   - 1
   warmup_requests: 0
   measured_requests: 8
-  max_new_tokens: 24
+  max_new_tokens: 64

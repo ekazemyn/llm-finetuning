@@ -13,29 +13,10 @@ from pathlib import Path
 
 from llm_finetuning.config import load_config
 from llm_finetuning.data import _source_cache_directory, load_finqa
-from llm_finetuning.evaluation import answers_match
 from llm_finetuning.modeling import load_model, load_tokenizer
+from llm_finetuning.pilot_diagnostics import score_answer, summarize_predictions
+from llm_finetuning.pilot_protocol import PROTOCOL, _encode_example
 from llm_finetuning.reproducibility import build_provenance, set_seed
-from llm_finetuning.training import _chat_text
-
-
-def _encode_example(example, tokenizer, max_length):
-    """Keep the prompt out of the loss and preserve the answer during truncation."""
-    # Answer-only targets reduce the pilot's compute; record this protocol in results.
-    formatted = _chat_text(
-        {**example, "completion": f"Final answer: {example['answer']}"}, tokenizer, max_length
-    )
-    prompt = tokenizer.encode(formatted["prompt"], add_special_tokens=False)
-    completion = tokenizer.encode(formatted["completion"], add_special_tokens=False)
-    if not prompt or not completion or len(prompt + completion) > max_length:
-        raise ValueError("Pilot example must have a prompt and answer within the token budget")
-    return {
-        "input_ids": prompt + completion,
-        "labels": [-100] * len(prompt) + completion,
-        "prompt_ids": prompt,
-        "id": example["id"],
-        "answer": example["answer"],
-    }
 
 
 def _check_deadline(deadline):
@@ -63,6 +44,11 @@ def _evaluate(model, tokenizer, examples, max_new_tokens, deadline):
     token_count = 0
     predictions = []
     started = time.perf_counter()
+    eos = getattr(getattr(model, "generation_config", None), "eos_token_id", None)
+    eos_ids = eos if isinstance(eos, list) else [eos]
+    eos_ids = sorted({token for token in [*eos_ids, tokenizer.eos_token_id] if token is not None})
+    if not eos_ids:
+        raise ValueError("Evaluation requires an EOS token")
     with torch.inference_mode():
         for example in examples:
             _check_deadline(deadline)
@@ -79,19 +65,24 @@ def _evaluate(model, tokenizer, examples, max_new_tokens, deadline):
                 do_sample=False,
                 use_cache=True,
                 pad_token_id=tokenizer.pad_token_id,
-                eos_token_id=tokenizer.eos_token_id,
+                eos_token_id=eos_ids,
             )
             generated = output[0, prompt.shape[1] :].tolist()
             prediction = tokenizer.decode(generated, skip_special_tokens=True)
+            stopped_on_eos = bool(generated and generated[-1] in eos_ids)
+            hit_limit = len(generated) >= max_new_tokens and not stopped_on_eos
             predictions.append(
                 {
                     "id": example["id"],
                     "reference": example["answer"],
                     "prediction": prediction,
-                    "correct": answers_match(prediction, example["answer"]),
+                    **score_answer(prediction, example["answer"]),
+                    "context": example.get("context", {}),
+                    "stop_reason": "eos"
+                    if stopped_on_eos
+                    else ("token_limit" if hit_limit else "other"),
                     "generated_tokens": len(generated),
-                    "hit_token_limit": len(generated) == max_new_tokens
-                    and generated[-1] != tokenizer.eos_token_id,
+                    "hit_token_limit": hit_limit,
                 }
             )
     if device.type == "cuda":
@@ -100,7 +91,7 @@ def _evaluate(model, tokenizer, examples, max_new_tokens, deadline):
     return {
         "completion_loss": loss,
         "completion_perplexity": math.exp(loss) if loss < 700 else None,
-        "numeric_accuracy": sum(row["correct"] for row in predictions) / len(predictions),
+        **summarize_predictions(predictions),
         "examples": len(predictions),
         "answer_tokens": token_count,
         "evaluation_seconds": time.perf_counter() - started,
@@ -126,7 +117,9 @@ def run_pilot(config_path="configs/local-pilot.yaml", *, budget_minutes=25):
     result = {
         "status": "running",
         "scope": "small-model FinQA pilot; not a full benchmark",
-        "protocol": "answer-only-v1; tail-truncated prompt; completion-only loss",
+        "protocol": PROTOCOL,
+        "schema_version": 2,
+        "scoring": "pilot-strict-answer-v2; numeric/percent tolerance 0.0001; yes/no/text exact",
         "budget_minutes": budget_minutes,
         "config": config,
     }
@@ -150,11 +143,17 @@ def run_pilot(config_path="configs/local-pilot.yaml", *, budget_minutes=25):
         )
         splits = load_finqa(config)
         max_length = config["model"]["max_length"]
-        training = [_encode_example(row, tokenizer, max_length) for row in splits["train"]]
+        max_new_tokens = config["inference"]["max_new_tokens"]
+        training = [
+            _encode_example(row, tokenizer, max_length, max_new_tokens) for row in splits["train"]
+        ]
         # Seeded held-out dev selection, identical for baseline and adapter. Test is untouched.
         validation = splits["validation"].shuffle(seed=config["project"]["seed"])
         validation = validation.select(range(min(8, len(validation))))
-        heldout = [_encode_example(row, tokenizer, max_length) for row in validation]
+        heldout = [
+            _encode_example(row, tokenizer, max_length, max_new_tokens) for row in validation
+        ]
+        result["training_context"] = [row["context"] for row in training]
         result["train_ids"] = [row["id"] for row in training]
         result["heldout_ids"] = [row["id"] for row in heldout]
         result["source_manifest"] = json.loads(
@@ -223,6 +222,8 @@ def run_pilot(config_path="configs/local-pilot.yaml", *, budget_minutes=25):
                         "completion_loss",
                         "completion_perplexity",
                         "numeric_accuracy",
+                        "numeric_examples",
+                        "answer_accuracy",
                         "examples",
                         "evaluation_seconds",
                     )
@@ -234,6 +235,16 @@ def run_pilot(config_path="configs/local-pilot.yaml", *, budget_minutes=25):
             writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
             writer.writeheader()
             writer.writerows(rows)
+        diagnostics = {
+            name: {
+                "answer_type_metrics": result[name]["answer_type_metrics"],
+                "error_analysis": result[name]["error_analysis"],
+            }
+            for name in ("baseline", "adapted")
+        }
+        (output / "error_analysis.json").write_text(
+            json.dumps(diagnostics, indent=2), encoding="utf-8"
+        )
         result["status"] = (
             "completed"
             if len(history) == config["training"]["max_steps"]
